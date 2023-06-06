@@ -1,7 +1,7 @@
 pipleine {
     agent any
     stages {
-        stage("build") {
+        stage("gitpull") {
             steps {
                 echo "checkout git"
             }
