@@ -1,0 +1,27 @@
+name: Sync Public API in NEW APIM from commerce-fulfill-deployment
+
+on:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  apim-changes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+     
+      - name: Debug
+        run: |
+          ls -al
+          pwd
+
+  
+
+      - name: Run APIM Changes
+        uses: BY-Product-Development/commerce-fulfill-github-shared-workflows/.github/workflows/apim-test.yml@main
+        with:
+          SERVICE_NAME: carton-management-service
+       
