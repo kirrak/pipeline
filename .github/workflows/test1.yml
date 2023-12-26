@@ -1,0 +1,16 @@
+name: Sync Public API in APIM
+
+on:
+  workflow_run:
+    workflows: [ "Release New Version" ]
+    branches: [ main ]
+    types:
+      - completed
+    workflow_dispatch:
+
+jobs:
+  apim-changes:
+    uses: BY-Product-Development/commerce-fulfill-github-shared-workflows/.github/workflows/apim.yml@main
+    secrets: inherit
+    with:
+      SERVICE_NAME: carton-management-service
