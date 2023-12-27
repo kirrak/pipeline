@@ -1,0 +1,175 @@
+name: Sync Public API in APIM added all code to carton management
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  check-apim-changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+    outputs:
+      path_changed: ${{ steps.apim-path-change.outputs.path_changed }}
+
+    steps:
+
+      - name: Generate github token
+        id: generate_github_token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.COMMERCE_FULFILL_GHAPP_ID }}
+          private_key: ${{ secrets.COMMERCE_FULFILL_GHAPP_PRIV_KEY }}
+
+      - name: Checkout service source
+        uses: actions/checkout@v3
+        with:
+          path: service
+          fetch-depth: 0
+
+      - name: Check for APIM path change
+        uses: marceloprado/has-changed-path@v1
+        id: changed-apim
+        with:
+          paths: api/apim
+        env:
+          SOURCE: service
+
+      - name: Set output for if APIM path changed
+        id: apim-path-change
+        run: |
+          echo ::set-output name=path_changed::${{ steps.changed-apim.outputs.changed }}
+          echo "path_changed = ${{ steps.changed-apim.outputs.changed }}"
+
+  sync-public-api:
+    runs-on: ubuntu-latest
+    needs: check-apim-changes
+    timeout-minutes: 60
+    if: (github.event.workflow_run.conclusion == 'success' && needs.check-apim-changes.outputs.path_changed == 'true') || github.event_name == 'workflow_dispatch'
+    env:
+      SERVICE_NAME: ${{ inputs.SERVICE_NAME }}
+      # Path in the service repository containing the files that need to be synchronized with APIM. This same path should be in the workflow's path filter.
+      # This starts with "service" because the service code is cloned into path "service".
+      PATH_TO_SERVICE_APIM_FILES: "service/api/apim"
+      # Name to use as the author of the commit.
+      GIT_AUTHOR: API Update
+      # Email address to use for the author of the commit.
+      GIT_EMAIL: github-action-pr-bot@github.com
+      # Ensure a common branch name prefix for each update to use.
+      BRANCH_NAME_PREFIX: feat/${{ inputs.SERVICE_NAME }}_automation
+      # Path where the APIM code is checked out.
+      APIM_CHECKOUT_PATH: apim
+
+    steps:
+
+      # Checkout the service repository which contains the updated API specification
+      - name: Checkout service source
+        uses: actions/checkout@v3
+        with:
+          path: service
+          fetch-depth: 0
+
+      - name: Generate github token
+        id: generate_github_token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.COMMERCE_FULFILL_GHAPP_ID }}
+          private_key: ${{ secrets.COMMERCE_FULFILL_GHAPP_PRIV_KEY }}
+
+      - name: Get Secrets
+        id: azure-secrets
+        uses: BY-Product-Development/commerce-fulfill-github-actions/azure-get-secrets@main
+        with:
+          az-cred: ${{ secrets.COMMERCE_FULFILL_AZURE_CREDENTIALS }}
+          keyvault: cf-kv-main
+          az-subscription-id: sub-jda-cld-lplat-test-01
+          secret-list:  |
+            commerce-common-deployment-pat
+            ORG_GRADLE_PROJECT_artifactory_user=artifactory-user
+            ORG_GRADLE_PROJECT_artifactory_password=artifactory-password
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          distribution: temurin
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Find latest released version
+        run: |
+          released_version=$(./gradlew currentVersion -q -Prelease.quiet)
+          echo "RELEASED_VERSION=${released_version}" >> $GITHUB_ENV
+        working-directory: service
+
+      #- name: Generate by shared github token
+      #  id: generate_by_shared_github_token
+      #  uses: tibdex/github-app-token@v1
+      #  with:
+      #    app_id: ${{ secrets.BY_SHARED_REPOS_GHAPP_ID }}
+      #    private_key: ${{ secrets.BY_SHARED_REPOS_PRIV_KEY }}
+       #   installation_id: ${{ secrets.BY_SHARED_REPOS_INSTALLATION_ID }}
+
+      # Checkout the API registry so that we can synchronize the API changes
+      - name: Checkout API registry from commerce-fulfill-deployment
+        uses: actions/checkout@v3
+        with:
+          path: ${{ env.APIM_CHECKOUT_PATH }}
+          repository: BY-Product-Development/commerce-fulfill-deployment
+          ref: main
+          fetch-depth: 0
+          token: ${{ steps.generate_by_shared_github_token.outputs.token }}
+
+      # If an existing PR for this service exists, check it out so we add to it instead of creating a new one.
+      - name: Checkout existing APIM PR 
+        id: checkout-existing-pr
+        continue-on-error: true
+        working-directory: ${{ env.APIM_CHECKOUT_PATH }}
+        run: |
+          echo ${{ steps.generate_by_shared_github_token.outputs.token }} | gh auth login --with-token
+          gh pr checkout ${{ env.BRANCH_NAME_PREFIX }}
+
+      # Use the api-spec-diff-check composite run action to check if the API spec has changes
+      - name: Check for API spec diff
+        id: check-for-diff
+        uses: BY-Product-Development/commerce-fulfill-github-actions/api-spec-diff-check@main
+        with:
+          apim-files-path-in-service: ${{ env.PATH_TO_SERVICE_APIM_FILES }}
+          released-version: ${{ env.RELEASED_VERSION }}
+          apim-checkout-path: ${{ env.APIM_CHECKOUT_PATH }}
+
+      # If changes are present, commit them.  This step will commit modifications and add new files, too.
+      - name: Commit updated API from commerce-fulfill-deployment
+        if: steps.check-for-diff.outputs.changed == 'true'
+        uses: EndBug/add-and-commit@v9.1.1
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_by_shared_github_token.outputs.token }}
+        with:
+          author_name: ${{ env.GIT_AUTHOR }}
+          author_email: ${{ env.GIT_EMAIL }}
+          message: Update ${{ env.SERVICE_NAME }} API to version ${{ env.RELEASED_VERSION }} from commit ${{ github.event.after }}
+          new_branch: ${{ env.BRANCH_NAME_PREFIX }}
+          cwd: ${{ env.APIM_CHECKOUT_PATH }}
+
+      # Create a PR against the API registry for the updated specification. This is only done if a PR doesn't already exist for the branch.
+      - name: Create PR for updated API from commerce-fulfill-deployment
+        id: apim-pr
+        if: steps.check-for-diff.outputs.changed == 'true' && steps.checkout-existing-pr.outcome == 'failure'
+        working-directory: ${{ env.APIM_CHECKOUT_PATH }}
+        run: |
+          gh pr create \
+            --title "[AFW] - Update ${{ env.SERVICE_NAME }} API" \
+            --base master \
+            --label "AFW" \
+            --fill
