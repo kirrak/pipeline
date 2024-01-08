@@ -15,9 +15,8 @@ jobs:
     steps:
 
       - name: Checkout test-automation-service repo
-        uses: actions/checkout@master
-        with:
-          repository: BY-Product-Development/exec-ecom-test-automation-service
+        uses: actions/checkout@main
+      
       - name: Install Python Dependencies
         run: |
           pip install --requirement test-automation-robot/test-automation-robot/requirements.txt    
