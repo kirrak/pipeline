@@ -1,0 +1,23 @@
+name: Test Case Executions
+
+on:
+  push:
+    
+
+jobs:
+
+  run-automation-tests:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    env:
+      NODE_JS_VERSION: 18.0.0
+
+    steps:
+
+      - name: Checkout test-automation-service repo
+        uses: actions/checkout@master
+        with:
+          repository: BY-Product-Development/exec-ecom-test-automation-service
+      - name: Install Python Dependencies
+        run: |
+          pip install --requirement test-automation-robot/test-automation-robot/requirements.txt    
