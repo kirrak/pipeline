@@ -19,4 +19,4 @@ jobs:
       
       - name: Install Python Dependencies
         run: |
-          pip install  
+          pip install -r requirements.txt 
