@@ -25,4 +25,4 @@ jobs:
 
       - name: Run Python Script
         run: |
-          python mongo_db.py  
+          python monodb_dlt.py  
