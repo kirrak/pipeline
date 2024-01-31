@@ -5,13 +5,13 @@ from pymongo import MongoClient
 logging.basicConfig(filename='script_log.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # MongoDB connection details
-mongo_uri = "mongodb+srv://test998972:<password>@cluster0.moqw88r.mongodb.net/"  # Update with your actual connection string
+mongo_uri = "mongodb+srv://test998972:hEV5s7MnF32fs8kT@cluster0.moqw88r.mongodb.net/"  # Update with your actual connection string
 mongo_cluster_name = 'cluster0'
 mongo_db_names = ['psl2_db', 'psl_db']
 
 # Extract username and password from the connection string (replace with your actual username and password)
 mongo_username = "test998972"
-mongo_password = "<password>"
+mongo_password = "hEV5s7MnF32fs8kT"
 
 try:
     # Construct the MongoDB connection string with username and password
