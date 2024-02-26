@@ -1,0 +1,104 @@
+name: PSR US Environment-test
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'psr-us/**'
+      - '!psr-us/stratosphere/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    env:
+      ARM_CLIENT_ID: ${{ secrets.AZ_LOF_SPN_CLIENT_ID }}  # spn-jda-cld-lplat-test-02-client-id in key vault
+      ARM_CLIENT_SECRET: ${{ secrets.AZ_LOF_SPN_CLIENT_SECRET }}  # spn-jda-cld-lplat-test-02-client-secret in key vault
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZ_PLATFORM_TEST_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZ_JDADELIVERS_TENANT_ID }}
+      MONGO_API_PUBLIC_KEY: 'mongo-api-public-key'
+      MONGO_API_PRIVATE_KEY: 'mongo-api-private-key'
+      ELASTIC_CLOUD_API_KEY: 'elastic-cloud-apikey'
+      SERVICE_ACCOUNT_CLIENT_ID: 'stratosphere-service-account-client-id'
+      SERVICE_ACCOUNT_CLIENT_SECRET: 'stratosphere-service-account-client-secret'
+      KEYVAULT: 'cf-kv-main'
+      ENV_KEYVAULT: 'o392jbm7ki9iy09bwuikm11r'
+      CURRENT_ENV: psr-us
+      TERRAFORM_FOLDER: psr-us/terraform
+
+    steps:
+      - name: "Generating Token"
+        id: get_workflow_token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.COMMERCE_FULFILL_GHAPP_ID }}
+          private_key: ${{ secrets.COMMERCE_FULFILL_GHAPP_PRIV_KEY }}
+
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          token: ${{ steps.get_workflow_token.outputs.token }}
+
+      - uses: hashicorp/setup-terraform@v1.3.2
+        with:
+          terraform_version: 1.4.4
+      
+      - name: Configure git for terraform
+        run: |
+          git config --global url."https://oauth2:${{ secrets.GITHUB_TOKEN }}@github.com".insteadOf https://github.com
+
+      - name: Upgrade Terraform modules
+        run: terraform init -upgrade
+
+      - name: AZ Login
+        run: |
+          az login --service-principal --username $ARM_CLIENT_ID --password $ARM_CLIENT_SECRET --tenant $ARM_TENANT_ID
+          az account set --subscription $ARM_SUBSCRIPTION_ID
+        working-directory: ${{ env.CURRENT_ENV }}
+
+      - name: Get secrets
+        uses: Azure/get-keyvault-secrets@v1.2
+        with:
+          keyvault: ${{ env.KEYVAULT }}
+          secrets: '${{ env.SERVICE_ACCOUNT_CLIENT_ID }}, ${{ env.SERVICE_ACCOUNT_CLIENT_SECRET }}, ${{ env.MONGO_API_PUBLIC_KEY }}, ${{ env.MONGO_API_PRIVATE_KEY }},${{ env.ELASTIC_CLOUD_API_KEY }}'
+        id: azure-secrets
+
+      - name: Set runtime environment variables
+        run: |
+          echo "TF_VAR_stratosphere_client_id=${{ steps.azure-secrets.outputs[env.SERVICE_ACCOUNT_CLIENT_ID] }}" >> $GITHUB_ENV
+          echo "TF_VAR_stratosphere_client_secret=${{ steps.azure-secrets.outputs[env.SERVICE_ACCOUNT_CLIENT_SECRET] }}" >> $GITHUB_ENV
+          echo "TF_VAR_mongo_api_public_key=${{ steps.azure-secrets.outputs[env.MONGO_API_PUBLIC_KEY] }}" >> $GITHUB_ENV
+          echo "TF_VAR_mongo_api_private_key=${{ steps.azure-secrets.outputs[env.MONGO_API_PRIVATE_KEY] }}" >> $GITHUB_ENV
+          echo "TF_VAR_elastic_cloud_apikey=${{ steps.azure-secrets.outputs[env.ELASTIC_CLOUD_API_KEY] }}" >> $GITHUB_ENV
+
+      - name: Terraform Format
+        run: terraform fmt -check -recursive -no-color
+
+      - name: Create Terraform plan
+        if: github.event_name == 'pull_request'
+        uses: dflook/terraform-plan@v1
+        env:
+          GITHUB_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
+          TERRAFORM_PRE_RUN: |
+            curl -skL https://aka.ms/InstallAzureCLIDeb | bash
+            az login --service-principal --username $ARM_CLIENT_ID --password $ARM_CLIENT_SECRET --tenant $ARM_TENANT_ID
+            az account set --subscription $ARM_SUBSCRIPTION_ID
+          TERRAFORM_HTTP_CREDENTIALS: |
+            github.com/BY-Product-Development/commerce-fulfill-afw-infrastructure=svc-github-prd-by:${{ steps.get_workflow_token.outputs.token }}
+        with:
+          path: ${{ env.TERRAFORM_FOLDER }}
+
+      - name: Publish environment Terraform Failure Card
+        uses: toko-bifrost/ms-teams-deploy-card@3.1.2
+        if: failure() && (github.ref == 'refs/heads/main' && github.event_name == 'push')
+        with:
+          github-token: ${{ steps.get_workflow_token.outputs.token }}
+          webhook-uri: ${{ secrets.TEAMS_AFW_WEBHOOK_URL }}
+          environment: ${{ env.CURRENT_ENV }}
+          show-on-start: false
+          show-on-failure: true
+          card-layout-exit: complete
+          
