@@ -1,4 +1,4 @@
-name: Realm-Onboard
+name: Realm Onboard
 
 on:
   workflow_dispatch:
