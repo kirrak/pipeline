@@ -1,0 +1,27 @@
+name: Realm-Onboard
+
+on:
+  workflow_dispatch:
+    inputs:
+      realm_name:
+        description: 'Name of the realm to onboard'
+        required: true
+        type: string
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up environment
+        run: echo "Setting up realm ${{ github.event.inputs.realm_name }}"
+
+      - name: Validate configurations
+        run: echo "Validating configurations for ${{ github.event.inputs.realm_name }}"
+
+      - name: Deploy resources
+        run: |
+          echo "Deploying resources for the new realm"
+          echo "Resources for ${{ github.event.inputs.realm_name }} are deployed"
