@@ -1,0 +1,20 @@
+name: Status Check
+
+on:
+  workflow_run:
+    workflows: ["Realm Onboard", "Realm Decommission"]
+    types:
+      - completed
+
+jobs:
+  check-status:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Perform status check
+        run: |
+          echo "Performing status check following successful completion of workflow: ${{ github.event.workflow_run.name }}"
+          echo "Status check completed successfully"
