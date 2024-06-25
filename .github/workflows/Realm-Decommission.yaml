@@ -1,7 +1,8 @@
 name: Realm Decommission
 
 on:
-  workflow_dispatch:
+  push
+    [main]
     inputs:
       realm_name:
         description: 'Name of the realm to decommission'
