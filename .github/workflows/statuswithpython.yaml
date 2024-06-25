@@ -1,4 +1,4 @@
-name: Status Check
+name: Status Check-python
 
 on:
   workflow_run:
