@@ -1,0 +1,24 @@
+name: Realm Decommission
+
+on:
+  workflow_dispatch:
+    inputs:
+      realm_name:
+        description: 'Name of the realm to decommission'
+        required: true
+        type: string
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Teardown resources
+        run: echo "Tearing down resources for ${{ github.event.inputs.realm_name }}"
+
+      - name: Final checks
+        run: |
+          echo "Performing final checks for decommissioning"
+          echo "Realm ${{ github.event.inputs.realm_name }} is now decommissioned"
