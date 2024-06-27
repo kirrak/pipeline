@@ -1,0 +1,33 @@
+name: Find SX Project
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  find-sx-project:
+    runs-on: ubuntu-latest
+
+    env:
+      ENV_NAME: dev-us
+      REALMS_MAPPING: .github/env-realms.yaml
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install yq
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y yq
+
+    - name: Read SX project from env-realms.yaml
+      id: read_sx_project
+      run: |
+        sx_project=$(yq e ".${ENV_NAME}.sx-project" ${REALMS_MAPPING})
+        echo "sx_project=${sx_project}"
+        echo "sx_project=${sx_project}" >> $GITHUB_ENV
+
+    - name: Display SX project
+      run: echo "The SX project is ${{ env.sx_project }}"
