@@ -11,7 +11,7 @@ jobs:
 
      env:
       ENV_NAME: dev-us
-      REALMS_MAPPING: .github/workflows/env-realms.yaml
+      REALMS_MAPPING: .github/env-realms.yaml
 
     steps:
     - name: Checkout repository
