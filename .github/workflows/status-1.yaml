@@ -21,12 +21,14 @@ jobs:
           sx_project=$(yq e ".${ENV_NAME}.sx-project" ${REALMS_MAPPING})
 
           STAGE=$(yq e ".${ENV_NAME}.env-stage" ${REALMS_MAPPING} | tr '[:lower:]' '[:upper:]')
+          stage_lower=$(yq e ".${ENV_NAME}.env-stage" ${REALMS_MAPPING} | tr '[:upper:]' '[:lower:]')
 
           echo "sx_project=${sx_project}"
 
           echo "STAGE=${STAGE}"
-
+          echo "STAGE_LOWER=${stage_lower}"
           echo "sx_project=${sx_project}" >> $GITHUB_ENV
+          echo "STAGE_LOWER=${stage_lower}" >> $GITHUB_ENV
 
           echo "STAGE=${STAGE}" >> $GITHUB_ENV
       - name: Validate STAGE
