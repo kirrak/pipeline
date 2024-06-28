@@ -30,6 +30,10 @@ jobs:
         echo "sx_project=${sx_project}" >> $GITHUB_ENV
         echo "STAGE=${STAGE}" >> $GITHUB_ENV
 
+    - name: Validate STAGE
+      if: env.STAGE == 'STAGING' || env.STAGE == 'PRODUCTION'
+      run: echo "Valid stage: ${{ env.STAGE }}"
+
     - name: Debug environment
       run: env
 
