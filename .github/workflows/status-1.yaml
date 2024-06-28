@@ -3,7 +3,7 @@ name: Find SX Project
 on:
   push:
     branches:
-      - main
+      - dev-1
 
 jobs:
   find-sx-project:
@@ -18,23 +18,22 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Install yq
-      uses: mikefarah/yq@v4  
+      uses: mikefarah/yq@v4
 
-    # - name: Install yq
-    #   run: |
-    #     sudo apt-get update
-    #     sudo wget https://github.com/mikefarah/yq/releases/download/v4.13.4/yq_linux_amd64 -O /usr/bin/yq
-    #     sudo chmod +x /usr/bin/yq
-
-    - name: Read SX project from env-realms.yaml
-      id: read_sx_project
+    - name: Read SX project and stage from env-realms.yaml
+      id: read_sx_project_and_stage
       run: |
         sx_project=$(yq e ".${ENV_NAME}.sx-project" ${REALMS_MAPPING})
-        env_stage=$(yq e ".${ENV_NAME}.env-stage" ${REALMS_MAPPING}) | tr '[:lower:]' '[:upper:]')
-        echo "STAGE=${env_stage}"
+        env_stage=$(yq e ".${ENV_NAME}.env-stage" ${REALMS_MAPPING} | tr '[:lower:]' '[:upper:]')
         echo "sx_project=${sx_project}"
+        echo "STAGE=${env_stage}"
         echo "sx_project=${sx_project}" >> $GITHUB_ENV
         echo "STAGE=${env_stage}" >> $GITHUB_ENV
 
-    - name: Display SX project
-      run: echo "The SX project is ${{ env.sx_project }}"
+    - name: Debug environment
+      run: env
+
+    - name: Display SX project and stage
+      run: |
+        echo "The SX project is ${{ env.sx_project }}"
+        echo "The environment stage is ${{ env.STAGE }}"
