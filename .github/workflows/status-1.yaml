@@ -20,18 +20,21 @@ jobs:
     - name: Install yq
       uses: mikefarah/yq@v4  
 
-    - name: Install yq
-      run: |
-        sudo apt-get update
-        sudo wget https://github.com/mikefarah/yq/releases/download/v4.13.4/yq_linux_amd64 -O /usr/bin/yq
-        sudo chmod +x /usr/bin/yq
+    # - name: Install yq
+    #   run: |
+    #     sudo apt-get update
+    #     sudo wget https://github.com/mikefarah/yq/releases/download/v4.13.4/yq_linux_amd64 -O /usr/bin/yq
+    #     sudo chmod +x /usr/bin/yq
 
     - name: Read SX project from env-realms.yaml
       id: read_sx_project
       run: |
         sx_project=$(yq e ".${ENV_NAME}.sx-project" ${REALMS_MAPPING})
+        env_stage=$(yq e ".${ENV_NAME}.env-stage" ${REALMS_MAPPING})
+        echo "env_stage=${env_stage}"
         echo "sx_project=${sx_project}"
         echo "sx_project=${sx_project}" >> $GITHUB_ENV
+        echo "env_stage=${env_stage}" >> $GITHUB_ENV
 
     - name: Display SX project
       run: echo "The SX project is ${{ env.sx_project }}"
