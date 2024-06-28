@@ -21,10 +21,8 @@ jobs:
           sx_project=$(yq e ".${ENV_NAME}.sx-project" ${REALMS_MAPPING})
 
           STAGE=$(yq e ".${ENV_NAME}.env-stage" ${REALMS_MAPPING} | tr '[:lower:]' '[:upper:]')
-          stage_lower=$(yq e ".${ENV_NAME}.env-stage" ${REALMS_MAPPING} | tr '[:upper:]' '[:lower:]')
-
+          stage_lower=$(yq e ".${ENV_NAME}.env-stage" ${REALMS_MAPPING} 
           echo "sx_project=${sx_project}"
-
           echo "STAGE=${STAGE}"
           echo "STAGE_LOWER=${stage_lower}"
           echo "sx_project=${sx_project}" >> $GITHUB_ENV
