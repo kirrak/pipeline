@@ -26,9 +26,9 @@ jobs:
         sx_project=$(yq e ".${ENV_NAME}.sx-project" ${REALMS_MAPPING})
         STAGE=$(yq e ".${ENV_NAME}.env-stage" ${REALMS_MAPPING} | tr '[:lower:]' '[:upper:]')
         echo "sx_project=${sx_project}"
-        echo "STAGE=${env_stage}"
+        echo "STAGE=${STAGE}"
         echo "sx_project=${sx_project}" >> $GITHUB_ENV
-        echo "STAGE=${env_stage}" >> $GITHUB_ENV
+        echo "STAGE=${STAGE}" >> $GITHUB_ENV
 
     - name: Debug environment
       run: env
