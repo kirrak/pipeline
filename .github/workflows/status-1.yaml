@@ -30,11 +30,11 @@ jobs:
       id: read_sx_project
       run: |
         sx_project=$(yq e ".${ENV_NAME}.sx-project" ${REALMS_MAPPING})
-        env_stage=$(yq e ".${ENV_NAME}.env-stage" ${REALMS_MAPPING})
-        echo "env_stage=${env_stage}"
+        env_stage=$(yq e ".${ENV_NAME}.env-stage" ${REALMS_MAPPING}) | tr '[:lower:]' '[:upper:]')
+        echo "STAGE=${env_stage}"
         echo "sx_project=${sx_project}"
         echo "sx_project=${sx_project}" >> $GITHUB_ENV
-        echo "env_stage=${env_stage}" >> $GITHUB_ENV
+        echo "STAGE=${env_stage}" >> $GITHUB_ENV
 
     - name: Display SX project
       run: echo "The SX project is ${{ env.sx_project }}"
