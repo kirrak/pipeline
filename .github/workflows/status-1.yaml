@@ -24,7 +24,7 @@ jobs:
       id: read_sx_project_and_stage
       run: |
         sx_project=$(yq e ".${ENV_NAME}.sx-project" ${REALMS_MAPPING})
-        env_stage=$(yq e ".${ENV_NAME}.env-stage" ${REALMS_MAPPING} | tr '[:lower:]' '[:upper:]')
+        STAGE=$(yq e ".${ENV_NAME}.env-stage" ${REALMS_MAPPING} | tr '[:lower:]' '[:upper:]')
         echo "sx_project=${sx_project}"
         echo "STAGE=${env_stage}"
         echo "sx_project=${sx_project}" >> $GITHUB_ENV
