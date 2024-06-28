@@ -31,7 +31,7 @@ jobs:
         echo "STAGE=${STAGE}" >> $GITHUB_ENV
 
     - name: Validate STAGE
-      if: env.STAGE == 'STAGING' || env.STAGE == 'PRODUCTION'
+      if: ${{ env.STAGE == 'STAGING' || env.STAGE == 'PRODUCTION' }}
       run: echo "Valid stage: ${{ env.STAGE }}"
 
     - name: Debug environment
