@@ -1,41 +1,34 @@
----
 name: Find SX Project
+
 on:
   push:
     branches:
       - dev-1
+
 jobs:
   find-sx-project:
     runs-on: ubuntu-latest
+
     env:
       ENV_NAME: dev-us
       REALMS_MAPPING: .github/env-realms.yaml
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Install yq
-        uses: mikefarah/yq@v4
-      - name: Read SX project and stage from env-realms.yaml
-        id: read_sx_project_and_stage
-        run: >
-          sx_project=$(yq e ".${ENV_NAME}.sx-project" ${REALMS_MAPPING})
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-          STAGE=$(yq e ".${ENV_NAME}.env-stage" ${REALMS_MAPPING} | tr '[:lower:]' '[:upper:]')
-          stage_lower=$(yq e ".${ENV_NAME}.env-stage" ${REALMS_MAPPING} 
-          echo "sx_project=${sx_project}"
-          echo "STAGE=${STAGE}"
-          echo "STAGE_LOWER=${stage_lower}"
-          echo "sx_project=${sx_project}" >> $GITHUB_ENV
-          echo "STAGE_LOWER=${stage_lower}" >> $GITHUB_ENV
+    - name: Install yq
+      uses: mikefarah/yq@v4
 
-          echo "STAGE=${STAGE}" >> $GITHUB_ENV
-      - name: Validate STAGE
-        if: ${{ env.STAGE == 'STAGING' || env.STAGE == 'PRODUCTION' }}
-        run: |
-          echo "Valid stage: ${{ env.STAGE }}"
-      - name: Debug environment
-        run: env
-      - name: Display SX project and stage
-        run: |
-          echo "The SX project is ${{ env.sx_project }}"
-          echo "The environment stage is ${{ env.STAGE }}"
+    - name: Read SX project and stage from env-realms.yaml
+      id: read_sx_project_and_stage
+      run: |
+        sx_project=$(yq e ".${ENV_NAME}.sx-project" ${REALMS_MAPPING})
+        STAGE=$(yq e ".${ENV_NAME}.env-stage" ${REALMS_MAPPING} | tr '[:lower:]' '[:upper:]')
+        stage_lower=$(yq e ".${ENV_NAME}.env-stage" ${REALMS_MAPPING} | tr '[:upper:]' '[:lower:]')
+        echo "sx_project=${sx_project}"
+        echo "STAGE=${STAGE}"
+        echo "STAGE_LOWER=${stage_lower}"
+        echo "sx_project=${sx_project}" >> $GITHUB_ENV
+        echo "STAGE_LOWER=${stage_lower}" >> $GITHUB_ENV
+        echo "STAGE=${STAGE}" >> $GITHUB_ENV
