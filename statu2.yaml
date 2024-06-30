@@ -35,9 +35,6 @@ jobs:
 
     - name: Get Key Vaults
       id: azure-secrets
-      uses: BY-Product-Development/ds-shared-actions/azure/azure-key-vault@az-key-vault/1.0
-      with:
-        key-vault: ${{ env.KEY_VAULT_NAME }}
         secrets: >
           STRATOSPHERE-AUTH-END-POINT=stratosphere-${{ env.STAGE_LOWER }}-auth-end-point
 
@@ -47,13 +44,13 @@ jobs:
         echo "client_id=ST_${{ env.STAGE }}_GITHUB_SERVICE_ACCOUNT_ID" >> "$GITHUB_OUTPUT"
         echo "client_secret=ST_${{ env.STAGE }}_GITHUB_SERVICE_ACCOUNT_SECRET" >> "$GITHUB_OUTPUT"
 
-    - name: Stratopshere access Token
-      id: stratosphere-token
-      uses: BY-Product-Development/ds-shared-actions/stratosphere/access-token-get@stratosphere-access-token-get-v1.0.1
-      with:
-        auth-endpoint: ${{ steps.azure-secrets.outputs['STRATOSPHERE-AUTH-END-POINT'] }}
-        client-id: ${{ secrets[steps.set_secret_name.outputs.client_id] }}
-        client-secret: ${{ secrets[steps.set_secret_name.outputs.client_secret] }}
+    # - name: Stratopshere access Token
+    #   id: stratosphere-token
+    #   uses: BY-Product-Development/ds-shared-actions/stratosphere/access-token-get@stratosphere-access-token-get-v1.0.1
+    #   with:
+    #     auth-endpoint: ${{ steps.azure-secrets.outputs['STRATOSPHERE-AUTH-END-POINT'] }}
+    #     client-id: ${{ secrets[steps.set_secret_name.outputs.client_id] }}
+    #     client-secret: ${{ secrets[steps.set_secret_name.outputs.client_secret] }}
 
     - name: Debug environment
       run: env
