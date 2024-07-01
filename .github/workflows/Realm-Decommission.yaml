@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Teardown resources
-        run: echo "Tearing down resources for ${{ github.event.inputs.realm_name }}"
+        run: echo "earing down resources for ${{ github.event.inputs.realm_name }}"
 
       - name: Final checks
         run: |
